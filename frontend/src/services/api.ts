@@ -1,4 +1,5 @@
 import { Block } from "@/types";
+import { bypassFetch } from "@/utils/securityExtensions";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -26,22 +27,16 @@ interface PaginatedResponse<T> {
 
 // CAD file API 
 export const fileApi = {
-  // Upload a CAD file
+  // Upload a CAD file - Using XMLHttpRequest to bypass BitDefender interference
   uploadFile: async (file: File): Promise<{ blocks: Block[] }> => {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await fetch(`${API_URL}/upload`, {
+    // Use bypassFetch to avoid extension interference
+    return bypassFetch(`${API_URL}/upload`, {
       method: 'POST',
-      body: formData,
+      body: formData
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to upload file');
-    }
-    
-    return response.json();
   },
   
   // Get all files with pagination
@@ -49,26 +44,38 @@ export const fileApi = {
     const { page = 1, limit = 10 } = params;
     const queryParams = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
     
-    const response = await fetch(`${API_URL}/files?${queryParams}`);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch files');
+    try {
+      // Try the secure method first
+      return await bypassFetch(`${API_URL}/files?${queryParams}`);
+    } catch (error) {
+      // Fall back to regular fetch if bypass fails
+      const response = await fetch(`${API_URL}/files?${queryParams}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch files');
+      }
+      
+      return response.json();
     }
-    
-    return response.json();
   },
   
   // Get file by ID
   getFileById: async (id: number): Promise<any> => {
-    const response = await fetch(`${API_URL}/files/${id}`);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch file');
+    try {
+      // Try the secure method first
+      return await bypassFetch(`${API_URL}/files/${id}`);
+    } catch (error) {
+      // Fall back to regular fetch
+      const response = await fetch(`${API_URL}/files/${id}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch file');
+      }
+      
+      return response.json();
     }
-    
-    return response.json();
   }
 };
 
@@ -84,37 +91,55 @@ export const blockApi = {
     if (categoryId) queryParams.append('categoryId', categoryId.toString());
     if (fileId) queryParams.append('fileId', fileId.toString());
     
-    const response = await fetch(`${API_URL}/blocks?${queryParams}`);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch blocks');
+    try {
+      // Try secure method first
+      return await bypassFetch(`${API_URL}/blocks?${queryParams}`);
+    } catch (error) {
+      // Fall back to regular fetch
+      const response = await fetch(`${API_URL}/blocks?${queryParams}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch blocks');
+      }
+      
+      return response.json();
     }
-    
-    return response.json();
   },
   
   // Get block by ID
   getBlockById: async (id: number): Promise<Block> => {
-    const response = await fetch(`${API_URL}/blocks/${id}`);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch block');
+    try {
+      // Try secure method first
+      return await bypassFetch(`${API_URL}/blocks/${id}`);
+    } catch (error) {
+      // Fall back to regular fetch
+      const response = await fetch(`${API_URL}/blocks/${id}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch block');
+      }
+      
+      return response.json();
     }
-    
-    return response.json();
   },
   
   // Get all block categories
   getCategories: async (): Promise<{ id: number; name: string; description: string }[]> => {
-    const response = await fetch(`${API_URL}/categories`);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch categories');
+    try {
+      // Try secure method first
+      return await bypassFetch(`${API_URL}/categories`);
+    } catch (error) {
+      // Fall back to regular fetch
+      const response = await fetch(`${API_URL}/categories`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch categories');
+      }
+      
+      return response.json();
     }
-    
-    return response.json();
   }
 }; 
